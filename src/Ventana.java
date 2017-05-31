@@ -19,8 +19,8 @@ import javax.swing.table.DefaultTableModel;
  */
 public class Ventana extends javax.swing.JFrame {
 
-    String[] columnNames = {"Product_name", "Sales_total", "Sales_percentage"};
-
+    String[] columnNames = new String[]{"Product_name", "Sales_total", "Sales_percentage", ""};
+    
     DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
     List<Object[]> listItems = new ArrayList<>();
     List<Object> listDetails = new ArrayList<>();
@@ -125,12 +125,38 @@ public class Ventana extends javax.swing.JFrame {
                 case 2: 
                     query = "SELECT customer_name, order_id, weight_class, SUM(quantity) " 
                             + "FROM facts_table " 
-                            + " GROUP BY ROLLUP(customer_name, order_id, weight_class)";
+                            + "GROUP BY ROLLUP(customer_name, order_id, weight_class)";
                 break;
                 case 3:
                     query = "SELECT customer_name, category_id, SUM(amount) " 
                             + "FROM facts_table " 
                             + "GROUP BY CUBE(customer_name, category_id)";
+                break;
+                case 4:
+                    query = "SELECT order_id, product_name, quantity, " 
+                            + "SUM(quantity) OVER(PARTITION BY order_id) TOTAL " 
+                            + "FROM facts_table";
+                break;
+                case 5: 
+                    query = "SELECT DISTINCT product_name, " 
+                            + "TO_DATE(('' || DAY || '/' || MONTH || '/' ||YEAR), "
+                            + "'dd/MM/YYYY') DATE_SALE, " 
+                            + "LAG ( product_name ) OVER ( ORDER BY TO_DATE(('' "
+                            + "|| DAY || '/' || MONTH || '/' ||YEAR), 'dd/MM/YYYY')) "
+                            + "PRIOR_SALE FROM facts_table\n ORDER BY DATE_SALE";
+                break;
+                case 6:
+                    query = "SELECT customer_id, order_id, product_name, quantity " 
+                            + "FROM facts_table "
+                            + "MODEL RETURN UPDATED ROWS " 
+                            + "PARTITION BY (order_id, customer_id) " 
+                            + "DIMENSION BY (product_name, year) " 
+                            + "MEASURES(amount, quantity) " 
+                            + "RULES(" 
+                            + "quantity['Card Holder - 25',2017] = "
+                            + "MAX(quantity)['Card Holder - 25', "
+                            + "year BETWEEN 2006 AND 2008]*2)";
+                break;
             }
             listItems = queries.getList(query);
             tblItems.setModel(tableModel);
