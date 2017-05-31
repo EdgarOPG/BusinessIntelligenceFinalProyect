@@ -19,13 +19,15 @@ import javax.swing.table.DefaultTableModel;
  */
 public class Ventana extends javax.swing.JFrame {
 
-    private static final String[] columnNames = {"Product_name", "Sale_total", "Sale_percentage"};
+    String[] columnNames = {"Product_name", "Sales_total", "Sales_percentage"};
 
     DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
     List<Object[]> listItems = new ArrayList<>();
     List<Object> listDetails = new ArrayList<>();
-    
+                
     Queries queries = new Queries();
+    String query;
+    Integer opcion = 0;
 
     public void refreshTable(List<Object[]> rows) {
         tableModel.getDataVector().removeAllElements();
@@ -37,15 +39,6 @@ public class Ventana extends javax.swing.JFrame {
 
     public Ventana(){
         initComponents();
-        try {
-            listItems = queries.getList("SELECT product_name, SUM(amount) SALE_TOTAL, ROUND(((SUM(amount) / SUM(amount) OVER() ) * 100),4) SALE_PERCENTAGE\n" +
-                    "  FROM facts_table\n" +
-                    "  GROUP BY(product_name, amount)");
-        } catch (SQLException ex) {
-            Logger.getLogger(Ventana.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        tblItems.setModel(tableModel);
-        refreshTable(listItems);
     }
 
     /**
@@ -59,6 +52,7 @@ public class Ventana extends javax.swing.JFrame {
 
         jScrollPane1 = new javax.swing.JScrollPane();
         tblItems = new javax.swing.JTable();
+        cmbOpcion = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -75,25 +69,76 @@ public class Ventana extends javax.swing.JFrame {
         ));
         jScrollPane1.setViewportView(tblItems);
 
+        cmbOpcion.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-Seleciona una busqueda-", "1", "2", "3", "4", "5", "6", "7" }));
+        cmbOpcion.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cmbOpcionItemStateChanged(evt);
+            }
+        });
+        cmbOpcion.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbOpcionActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(15, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 375, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(cmbOpcion, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 275, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(14, Short.MAX_VALUE))
+                .addComponent(cmbOpcion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 43, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 228, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void cmbOpcionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbOpcionActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbOpcionActionPerformed
+
+    private void cmbOpcionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cmbOpcionItemStateChanged
+        try {
+            opcion = cmbOpcion.getSelectedIndex();
+            System.out.println(opcion);
+            switch(opcion){
+                case 1:
+                    query = "SELECT product_name, SUM(amount) SALE_TOTAL, "
+                            + "ROUND(((SUM(amount) / SUM(amount) OVER() ) * 100),4) "
+                            + "SALE_PERCENTAGE FROM facts_table " 
+                            + "GROUP BY(product_name, amount)";
+                break;
+                case 2: 
+                    query = "SELECT customer_name, order_id, weight_class, SUM(quantity) " 
+                            + "FROM facts_table " 
+                            + " GROUP BY ROLLUP(customer_name, order_id, weight_class)";
+                break;
+                case 3:
+                    query = "SELECT customer_name, category_id, SUM(amount) " 
+                            + "FROM facts_table " 
+                            + "GROUP BY CUBE(customer_name, category_id)";
+            }
+            listItems = queries.getList(query);
+            tblItems.setModel(tableModel);
+            refreshTable(listItems);
+        } catch (SQLException ex) {
+            Logger.getLogger(Ventana.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_cmbOpcionItemStateChanged
 
     /**
      * @param args the command line arguments
@@ -131,6 +176,7 @@ public class Ventana extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JComboBox<String> cmbOpcion;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable tblItems;
     // End of variables declaration//GEN-END:variables
